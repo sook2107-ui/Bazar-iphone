@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bazar Pro">
+<meta name="theme-color" content="#0F0F1A">
+<title>Bazar Pro — iPhone</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- ZXing: librería moderna de escaneo, funciona en HTTPS/Netlify/GitHub Pages -->
+<script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
+<style>
+:root{
+  --bg:#0F0F1A;--sf:#1A1A2E;--s2:#232340;--bd:#2D2D4E;
+  --tx:#F0F0FF;--t2:#9898BB;--t3:#5A5A7A;
+  --ac:#6C8EBF;--acl:#4A6EA0;--abg:#1A2535;
+  --gn:#4ADE80;--gbg:#0D2818;
+  --am:#FBBF24;--ambg:#2A1F00;
+  --rd:#F87171;--rbg:#2A0D0D;
+  --pu:#A78BFA;
+  --r:14px;--rs:10px;--rl:20px;
+  --sh:0 2px 12px rgba(0,0,0,.4);
+  --shm:0 8px 32px rgba(0,0,0,.6);
+  --mo:"DM Mono",monospace;
+  --fn:"DM Sans",sans-serif;
+  --safe-top:env(safe-area-inset-top,44px);
+  --safe-bot:env(safe-area-inset-bottom,34px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:var(--fn);font-size:16px;}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;height:100%;height:100dvh;}
+.topbar{
+  background:rgba(15,15,26,.95);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--bd);
+  padding:calc(var(--safe-top) + 4px) 16px 12px;
+  display:flex;align-items:center;gap:12px;
+  flex-shrink:0;z-index:10;
+}
+.tb-back{width:36px;height:36px;border-radius:50%;background:var(--s2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.tb-title{flex:1;font-size:17px;font-weight:600;letter-spacing:-.3px;}
+.tb-action{padding:7px 14px;background:var(--ac);color:#fff;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--fn);flex-shrink:0;}
+.tb-action.sec{background:var(--s2);border:1px solid var(--bd);color:var(--tx);}
+
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;}
+.content.np{padding:0;}
+
+/* ── BOTTOM NAV ── */
+.bottomnav{
+  background:rgba(15,15,26,.97);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:1px solid var(--bd);
+  padding:8px 0 calc(var(--safe-bot));
+  display:flex;flex-shrink:0;
+}
+.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;cursor:pointer;transition:all .15s;}
+.bn-item.active .bn-icon{color:var(--ac);}
+.bn-item.active .bn-label{color:var(--ac);}
+.bn-icon{font-size:22px;transition:transform .15s;}
+.bn-label{font-size:10px;color:var(--t3);font-weight:500;transition:color .15s;}
+.bn-item:active .bn-icon{transform:scale(.85);}
+
+/* ── CARDS ── */
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--sh);}
+.card-title{font-size:13px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;}
+
+/* ── STATS ROW ── */
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.stat-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px;text-align:center;}
+.stat-num{font-size:28px;font-weight:700;font-family:var(--mo);letter-spacing:-1px;}
+.stat-lbl{font-size:11px;color:var(--t2);margin-top:3px;}
+
+/* ── LIST ITEMS ── */
+.list-item{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s;-webkit-user-select:none;}
+.list-item:active{background:var(--s2);transform:scale(.98);}
+.li-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.li-body{flex:1;min-width:0;}
+.li-title{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.li-sub{font-size:12px;color:var(--t2);margin-top:2px;}
+.li-right{text-align:right;flex-shrink:0;}
+.li-val{font-size:15px;font-weight:600;font-family:var(--mo);}
+.li-tag{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;margin-top:3px;display:inline-block;}
+
+/* ── FORMS ── */
+.fg{margin-bottom:14px;}
+.fg label{display:block;font-size:12px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
+.fg input,.fg select,.fg textarea{
+  width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);
+  color:var(--tx);font-family:var(--fn);font-size:16px;padding:12px 14px;
+  outline:none;transition:border-color .2s;-webkit-appearance:none;
+}
+.fg input:focus,.fg select:focus{border-color:var(--ac);}
+.fg select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235A5A7A' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.btn-full{width:100%;padding:14px;border-radius:var(--r);border:none;font-size:16px;font-weight:600;cursor:pointer;font-family:var(--fn);transition:all .15s;}
+.btn-full:active{transform:scale(.97);}
+.btn-full.primary{background:var(--ac);color:#fff;}
+.btn-full.secondary{background:var(--s2);color:var(--tx);border:1px solid var(--bd);}
+.btn-full.danger{background:var(--rbg);color:var(--rd);border:1px solid var(--rd);}
+.btn-full.success{background:var(--gbg);color:var(--gn);border:1px solid var(--gn);}
+.btn-row{display:flex;gap:8px;}
+.btn-row .btn-full{flex:1;}
+
+/* ── SCANNER ── */
+.scanner-wrap{position:relative;width:100%;background:#000;border-radius:var(--r);overflow:hidden;}
+.scanner-wrap video{width:100%;display:block;object-fit:cover;}
+.scan-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;}
+.scan-frame{width:220px;height:140px;position:relative;}
+.scan-frame::before,.scan-frame::after{content:"";position:absolute;width:30px;height:30px;border-color:var(--ac);border-style:solid;}
+.scan-frame::before{top:0;left:0;border-width:3px 0 0 3px;border-radius:4px 0 0 0;}
+.scan-frame::after{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 4px 0;}
+.scan-corner{position:absolute;width:30px;height:30px;border-color:var(--ac);border-style:solid;}
+.scan-corner.tr{top:0;right:0;border-width:3px 3px 0 0;border-radius:0 4px 0 0;}
+.scan-corner.bl{bottom:0;left:0;border-width:0 0 3px 3px;border-radius:0 0 0 4px;}
+.scan-line{width:200px;height:2px;background:linear-gradient(90deg,transparent,var(--ac),transparent);animation:scan-anim 1.5s ease-in-out infinite;}
+@keyframes scan-anim{0%,100%{transform:translateY(-60px);opacity:0;}10%{opacity:1;}90%{opacity:1;}50%{transform:translateY(60px);}}
+.scan-hint{color:rgba(255,255,255,.7);font-size:13px;margin-top:20px;text-align:center;}
+
+/* ── SCANNER STATUS ── */
+.scan-status{padding:10px 16px;font-size:13px;text-align:center;font-weight:500;}
+.scan-status.ok{color:var(--gn);}
+.scan-status.err{color:var(--rd);}
+.scan-status.wait{color:var(--t2);}
+
+/* ── USB SCANNER INDICATOR ── */
+.usb-indicator{display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:10px 14px;margin-bottom:12px;font-size:13px;}
+.usb-dot{width:8px;height:8px;border-radius:50%;background:var(--gn);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+/* ── MODAL SHEET ── */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:100;display:none;align-items:flex-end;}
+.sheet-bg.open{display:flex;}
+.sheet{background:var(--sf);border-radius:24px 24px 0 0;width:100%;max-height:90dvh;overflow-y:auto;padding:20px 16px calc(var(--safe-bot) + 16px);animation:sheet-up .25s ease;}
+@keyframes sheet-up{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.sheet-handle{width:40px;height:4px;background:var(--bd);border-radius:2px;margin:0 auto 20px;}
+.sheet-title{font-size:18px;font-weight:700;margin-bottom:20px;text-align:center;}
+
+/* ── BADGE ── */
+.badge{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;}
+.badge.bz{background:var(--abg);color:var(--ac);}
+.badge.ng{background:#1A1025;color:var(--pu);}
+.badge.gn{background:var(--gbg);color:var(--gn);}
+.badge.rd{background:var(--rbg);color:var(--rd);}
+.badge.am{background:var(--ambg);color:var(--am);}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:48px 24px;color:var(--t3);}
+.empty-icon{font-size:48px;margin-bottom:12px;}
+.empty-txt{font-size:15px;margin-bottom:20px;}
+
+/* ── SEARCH ── */
+.search-bar{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:11px 14px 11px 40px;width:100%;color:var(--tx);font-size:16px;font-family:var(--fn);outline:none;margin-bottom:14px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%235A5A7A' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:13px center;-webkit-appearance:none;}
+
+/* ── TOAST ── */
+.toast-wrap{position:fixed;top:calc(var(--safe-top) + 60px);left:50%;transform:translateX(-50%);z-index:999;pointer-events:none;}
+.toast{background:rgba(26,26,46,.97);border:1px solid var(--bd);color:var(--tx);padding:10px 20px;border-radius:20px;font-size:14px;font-weight:500;white-space:nowrap;backdrop-filter:blur(20px);box-shadow:var(--shm);opacity:0;transform:translateY(-8px);transition:all .25s;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.gn{border-color:var(--gn);color:var(--gn);}
+.toast.rd{border-color:var(--rd);color:var(--rd);}
+
+/* ── PROGRESS BAR ── */
+.prog-bar{height:6px;background:var(--s2);border-radius:3px;overflow:hidden;margin-top:6px;}
+.prog-fill{height:6px;background:var(--ac);border-radius:3px;transition:width .3s;}
+
+/* ── SYNC SCREEN ── */
+.sync-hero{text-align:center;padding:32px 24px 24px;}
+.sync-icon{font-size:64px;margin-bottom:16px;}
+.sync-title{font-size:22px;font-weight:700;margin-bottom:8px;}
+.sync-sub{font-size:14px;color:var(--t2);line-height:1.6;}
+
+/* ── MARGEN PREVIEW ── */
+.margen-prev{background:var(--gbg);border:1px solid var(--gn);border-radius:var(--rs);padding:10px 14px;font-size:13px;color:var(--gn);margin-bottom:14px;display:none;}
+
+/* ── HISTORIAL ITEM ── */
+.hist-item{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);padding:12px 14px;margin-bottom:6px;}
+.hist-date{font-size:11px;color:var(--t3);font-family:var(--mo);margin-bottom:4px;}
+.hist-row{display:flex;justify-content:space-between;align-items:center;}
+
+/* ── SELECTOR ── */
+.origin-sel{display:flex;gap:8px;margin-bottom:16px;}
+.origin-btn{flex:1;padding:10px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--s2);color:var(--t2);font-family:var(--fn);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center;}
+.origin-btn.active.bz{background:var(--abg);border-color:var(--ac);color:var(--ac);}
+.origin-btn.active.ng{background:#1A1025;border-color:var(--pu);color:var(--pu);}
+
+/* ── CONSULTA SECTIONS ── */
+.consult-sec{margin-bottom:20px;}
+.consult-hdr{font-size:13px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+.consult-count{font-size:11px;font-family:var(--mo);color:var(--t3);}
+
+/* ── LOADING ── */
+#boot-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px;}
+#boot-screen .logo{font-size:64px;}
+#boot-screen .boot-txt{font-size:16px;color:var(--t2);}
+</style>
+</head>
+<body>
+
+<!-- Pantalla de carga -->
+<div id="boot-screen">
+  <div class="logo">📦</div>
+  <div class="boot-txt">Cargando Bazar Pro…</div>
+</div>
+
+<div class="app" id="app" style="display:none;">
+  <!-- Toast -->
+  <div class="toast-wrap"><div class="toast" id="toast"></div></div>
+
+  <!-- Topbar -->
+  <div class="topbar" id="topbar">
+    <div class="tb-back" id="tb-back" style="display:none;" onclick="goBack()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+    </div>
+    <div class="tb-title" id="tb-title">📦 Bazar Pro</div>
+    <button class="tb-action sec" id="tb-action" style="display:none;" onclick="tbAction()"></button>
+  </div>
+
+  <!-- Content -->
+  <div class="content" id="main-content"></div>
+
+  <!-- Bottom Nav -->
+  <div class="bottomnav" id="bottomnav">
+    <div class="bn-item active" id="bn-dash" onclick="goTo('dash')">
+      <div class="bn-icon">🏠</div><div class="bn-label">Inicio</div>
+    </div>
+    <div class="bn-item" id="bn-prov" onclick="goTo('prov')">
+      <div class="bn-icon">🏪</div><div class="bn-label">Proveedores</div>
+    </div>
+    <div class="bn-item" id="bn-scan" onclick="goTo('scan')">
+      <div class="bn-icon">📷</div><div class="bn-label">Escanear</div>
+    </div>
+    <div class="bn-item" id="bn-inv" onclick="goTo('inv')">
+      <div class="bn-icon">📦</div><div class="bn-label">Inventario</div>
+    </div>
+    <div class="bn-item" id="bn-sync" onclick="goTo('sync')">
+      <div class="bn-icon">🔄</div><div class="bn-label">Sincronizar</div>
+    </div>
+  </div>
+</div>
+
+<!-- Sheets -->
+<div class="sheet-bg" id="sheet-prov">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheet-prov-title">Nuevo proveedor</div>
+    <input type="hidden" id="prov-eid">
+    <div class="fg"><label>Nombre del proveedor</label><input type="text" id="prov-nm" placeholder="Ej: Ropa Mayoreo López"></div>
+    <div class="fg"><label>Teléfono</label><input type="tel" id="prov-tel" placeholder="686 000 0000"></div>
+    <div class="fg"><label>Tipo de renta</label>
+      <select id="prov-renta">
+        <option value="mensual">Mensual</option>
+        <option value="quincenal">Quincenal</option>
+        <option value="semanal">Semanal</option>
+        <option value="ninguna">Sin renta</option>
+      </select>
+    </div>
+    <div class="fg"><label>Monto de renta ($)</label><input type="number" id="prov-monto" placeholder="0.00" min="0" step="0.01"></div>
+    <div class="btn-row" style="margin-top:8px;">
+      <button class="btn-full secondary" onclick="cerrarSheet('sheet-prov')">Cancelar</button>
+      <button class="btn-full primary" onclick="guardarProv()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-bg" id="sheet-prod">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheet-prod-title">Nuevo producto</div>
+    <input type="hidden" id="prod-eid">
+    <input type="hidden" id="prod-origen">
+    <!-- Selector origen -->
+    <div class="origin-sel" id="prod-origen-sel">
+      <div class="origin-btn bz active" id="ob-bz" onclick="setProdOrigen('bazar')">🏪 Bazar</div>
+      <div class="origin-btn ng" id="ob-ng" onclick="setProdOrigen('negocio')">🏬 Mi negocio</div>
+    </div>
+    <div class="fg" id="prod-prov-row">
+      <label>Proveedor</label>
+      <select id="prod-vid"><option value="">Seleccionar proveedor...</option></select>
+    </div>
+    <div class="fg"><label>Código de barras</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="prod-bc" placeholder="Escanear o escribir..." style="flex:1;">
+        <button onclick="abrirScannerEnSheet()" style="padding:12px 14px;background:var(--ac);border:none;border-radius:var(--rs);cursor:pointer;font-size:18px;">📷</button>
+      </div>
+    </div>
+    <div class="fg"><label>Nombre del producto</label><input type="text" id="prod-nm" placeholder="Ej: Filipina manga larga azul"></div>
+    <div class="fg2">
+      <div class="fg"><label>Precio ($)</label><input type="number" id="prod-pr" placeholder="0.00" min="0" step="0.01" oninput="calcMargenSheet()"></div>
+      <div class="fg"><label>Cantidad</label><input type="number" id="prod-qty" placeholder="0" min="0"></div>
+    </div>
+    <div class="fg" id="prod-costo-row" style="display:none;">
+      <label>Costo ($) <span style="font-size:10px;color:var(--t3);font-weight:400;">opcional</span></label>
+      <input type="number" id="prod-costo" placeholder="0.00" min="0" step="0.01" oninput="calcMargenSheet()">
+    </div>
+    <div class="margen-prev" id="prod-margen-prev"></div>
+    <div class="btn-row" style="margin-top:8px;">
+      <button class="btn-full secondary" onclick="cerrarSheet('sheet-prod')">Cancelar</button>
+      <button class="btn-full primary" onclick="guardarProd()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet scanner mini (dentro del formulario) -->
+<div class="sheet-bg" id="sheet-scan-mini">
+  <div class="sheet" style="padding-bottom:calc(var(--safe-bot) + 16px);">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Escanear código</div>
+    <div class="scanner-wrap" style="height:260px;border-radius:var(--r);overflow:hidden;margin-bottom:12px;">
+      <video id="scanner-mini-video" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>
+      <div class="scan-overlay">
+        <div class="scan-frame">
+          <div class="scan-corner tr"></div>
+          <div class="scan-corner bl"></div>
+          <div class="scan-line"></div>
+        </div>
+        <div class="scan-hint">Apunta al código de barras</div>
+      </div>
+    </div>
+    <div id="scan-mini-status" class="scan-status wait">Iniciando cámara…</div>
+    <button class="btn-full secondary" onclick="cerrarScannerMini()">Cancelar</button>
+  </div>
+</div>
+
+<!--
+  ================================================================
+  ESCÁNER USB FÍSICO
+  El escáner USB/Lightning actúa como teclado: escribe el código y
+  presiona Enter. Este input invisible captura esa entrada siempre,
+  sin importar en qué pantalla estés.
+  ================================================================
+-->
+<input type="text" id="usb-scanner-input"
+  style="position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:-100px;left:-100px;"
+  autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+<script>
+// ================================================================
+// DB — IndexedDB
+// ================================================================
+let idb=null;
+const DB={vendedores:[],productos:[],mi_productos:[],config:{},_meta:{}};
+let IDS={vid:1,pid:1,mip:1};
+
+function abrirDB(){
+  return new Promise((res,rej)=>{
+    const q=indexedDB.open("bazarIphoneDB",1);
+    q.onupgradeneeded=e=>{
+      const db=e.target.result;
+      ["vendedores","productos","mi_productos","config"].forEach(s=>{
+        if(!db.objectStoreNames.contains(s))
+          db.createObjectStore(s,{keyPath:"id"});
+      });
+    };
+    q.onsuccess=e=>{idb=e.target.result;res();};
+    q.onerror=e=>rej(e);
+  });
+}
+function tx(store,mode="readonly"){return idb.transaction(store,mode).objectStore(store);}
+function dbGA(store){return new Promise(res=>{const r=tx(store).getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>res([]);});}
+function dbP(store,obj){return new Promise(res=>{const r=tx(store,"readwrite").put(obj);r.onsuccess=()=>res();r.onerror=()=>res();});}
+function dbD(store,id){return new Promise(res=>{const r=tx(store,"readwrite").delete(id);r.onsuccess=()=>res();r.onerror=()=>res();});}
+function mx(arr){return arr.length?Math.max(...arr.map(x=>x.id||0))+1:1;}
+
+async function loadAll(){
+  DB.vendedores=await dbGA("vendedores");
+  DB.productos=await dbGA("productos");
+  DB.mi_productos=await dbGA("mi_productos");
+  const cfgArr=await dbGA("config");
+  DB.config={};cfgArr.forEach(c=>DB.config[c.key]=c.value);
+  IDS.vid=mx(DB.vendedores);
+  IDS.pid=mx(DB.productos);
+  IDS.mip=mx(DB.mi_productos);
+  if(DB.config._ids_vid)IDS.vid=Math.max(IDS.vid,parseInt(DB.config._ids_vid)||1);
+  if(DB.config._ids_pid)IDS.pid=Math.max(IDS.pid,parseInt(DB.config._ids_pid)||1);
+  if(DB.config._ids_mip)IDS.mip=Math.max(IDS.mip,parseInt(DB.config._ids_mip)||1);
+}
+
+// ================================================================
+// HELPERS
+// ================================================================
+const fm=n=>new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN",minimumFractionDigits:2}).format(n||0);
+const hoy=()=>new Date().toISOString().slice(0,10);
+const ff=d=>{if(!d)return"";const[y,m,dia]=d.split("-");return`${dia}/${m}/${y}`;};
+
+function toast(msg,tipo=""){
+  const el=document.getElementById("toast");
+  el.textContent=msg;el.className="toast show"+(tipo?" "+tipo:"");
+  clearTimeout(el._t);el._t=setTimeout(()=>el.className="toast",2500);
+}
+
+// ================================================================
+// ESCÁNER USB FÍSICO
+// Cuando el escáner USB escribe el código y presiona Enter,
+// lo capturamos aquí sin importar qué pantalla esté activa.
+// ================================================================
+let usbBuffer="";
+let usbTimer=null;
+
+function initUSBScanner(){
+  const inp=document.getElementById("usb-scanner-input");
+
+  // Mantener el input enfocado para capturar entrada del scanner USB
+  // pero sin robar el foco de los campos normales
+  document.addEventListener("keydown",(e)=>{
+    // Si hay un input/textarea enfocado (usuario escribiendo), no interceptar
+    const focused=document.activeElement;
+    if(focused&&(focused.tagName==="INPUT"||focused.tagName==="TEXTAREA")&&focused.id!=="usb-scanner-input"){
+      // Si el campo activo es el campo de código, dejar pasar normalmente
+      return;
+    }
+    // Capturar teclas del scanner USB
+    if(e.key==="Enter"&&usbBuffer.length>3){
+      e.preventDefault();
+      const code=usbBuffer.trim();
+      usbBuffer="";
+      clearTimeout(usbTimer);
+      manejarCodigoUSB(code);
+    }else if(e.key.length===1){
+      usbBuffer+=e.key;
+      clearTimeout(usbTimer);
+      // Si en 100ms no llegan más caracteres, limpiar buffer (entrada manual lenta)
+      usbTimer=setTimeout(()=>{usbBuffer="";},500);
+    }
+  });
+}
+
+function manejarCodigoUSB(code){
+  if(!code)return;
+  if(navigator.vibrate)navigator.vibrate(50);
+
+  // Si el sheet de scanner mini está abierto, llenar el campo
+  if(document.getElementById("sheet-scan-mini").classList.contains("open")){
+    cerrarScannerMini();
+    if(scannerMiniCallback)scannerMiniCallback(code);
+    return;
+  }
+  // Si estamos en la pantalla de escanear, procesar
+  if(curScreen==="scan"){
+    procesarCodigo(code);
+    return;
+  }
+  // En cualquier pantalla, mostrar toast y preguntar
+  toast(`📟 USB: ${code}`,"");
+  setTimeout(()=>procesarCodigoGlobal(code),300);
+}
+
+function procesarCodigoGlobal(code){
+  // Buscar en inventario global
+  const enBazar=DB.productos.find(p=>p.barcode===code);
+  const enNegocio=DB.mi_productos.find(p=>p.barcode===code);
+  if(enBazar||enNegocio){
+    const prod=enBazar||enNegocio;
+    const origen=enBazar?"bazar":"negocio";
+    toast(`✓ ${prod.nombre} — ${fm(prod.precio)}`,"gn");
+  }else{
+    // Ir a pantalla de scan para agregar
+    goTo("scan");
+    setTimeout(()=>{
+      procesarCodigo(code);
+      const inp=document.getElementById("scan-manual");
+      if(inp)inp.value=code;
+    },300);
+  }
+}
+
+// ================================================================
+// NAV
+// ================================================================
+let curScreen="dash";
+let screenStack=[];
+let tbActionFn=null;
+
+function goTo(screen,push=true){
+  // Detener scanner de cámara si cambiamos de pantalla
+  if(curScreen==="scan"&&screen!=="scan"){
+    detenerScannerCamara();
+  }
+  if(push&&curScreen!==screen)screenStack.push(curScreen);
+  curScreen=screen;
+  ["dash","prov","scan","inv","sync"].forEach(s=>{
+    const b=document.getElementById("bn-"+s);
+    if(b)b.classList.toggle("active",s===screen);
+  });
+  const back=document.getElementById("tb-back");
+  const act=document.getElementById("tb-action");
+  back.style.display=screenStack.length?"flex":"none";
+  act.style.display="none";tbActionFn=null;
+  renderScreen(screen);
+}
+
+function goBack(){
+  if(!screenStack.length)return;
+  const prev=screenStack.pop();
+  goTo(prev,false);
+}
+
+function setTbAction(label,fn){
+  const btn=document.getElementById("tb-action");
+  btn.textContent=label;btn.style.display="block";
+  tbActionFn=fn;
+}
+function tbAction(){if(tbActionFn)tbActionFn();}
+function setTitle(t){document.getElementById("tb-title").textContent=t;}
+
+function renderScreen(s){
+  const c=document.getElementById("main-content");
+  c.className="content";
+  ({
+    dash:renderDash,prov:renderProv,scan:renderScan,
+    inv:renderInv,sync:renderSync,
+    prov_det:renderProvDet,
+  }[s]||function(){})();
+}
+
+// ================================================================
+// DASHBOARD
+// ================================================================
+function renderDash(){
+  setTitle("📦 Bazar Pro");
+  const negocio=DB.config.negocio||"Mi bazar";
+  const totalProd=DB.productos.length+DB.mi_productos.length;
+  const bajos=[...DB.productos,...DB.mi_productos].filter(p=>parseInt(p.qty)<=3&&parseInt(p.qty)>=0);
+  const agotados=[...DB.productos,...DB.mi_productos].filter(p=>parseInt(p.qty)<=0);
+
+  document.getElementById("main-content").innerHTML=`
+    <div style="padding-bottom:8px;">
+      <div style="font-size:22px;font-weight:700;margin-bottom:4px;">${negocio}</div>
+      <div style="font-size:13px;color:var(--t2);">Bazar Pro iPhone — ${ff(hoy())}</div>
+    </div>
+
+    <div class="stats-row" style="margin-top:16px;">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--ac);">${DB.vendedores.length}</div>
+        <div class="stat-lbl">Proveedores</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">${totalProd}</div>
+        <div class="stat-lbl">Productos total</div>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card" onclick="goTo('inv')">
+        <div class="stat-num" style="color:${agotados.length?"var(--rd)":"var(--gn)"};">${agotados.length}</div>
+        <div class="stat-lbl">Agotados</div>
+      </div>
+      <div class="stat-card" onclick="goTo('inv')">
+        <div class="stat-num" style="color:${bajos.length?"var(--am)":"var(--gn)"};">${bajos.length}</div>
+        <div class="stat-lbl">Stock bajo</div>
+      </div>
+    </div>
+
+    ${!DB.config.importado?`
+    <div class="card" style="border-color:var(--ac);background:var(--abg);">
+      <div class="card-title" style="color:var(--ac);">📥 Primeros pasos</div>
+      <p style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:14px;">Importa tus datos desde el Bazar App de la computadora para sincronizar proveedores y productos.</p>
+      <button class="btn-full primary" onclick="goTo('sync')">Ir a Sincronizar →</button>
+    </div>`:`
+    <div class="card">
+      <div class="card-title">Acciones rápidas</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button class="btn-full secondary" onclick="goTo('scan')" style="padding:16px;font-size:14px;">📷 Escanear</button>
+        <button class="btn-full secondary" onclick="abrirSheetProd()" style="padding:16px;font-size:14px;">+ Producto</button>
+        <button class="btn-full secondary" onclick="abrirSheetProv()" style="padding:16px;font-size:14px;">+ Proveedor</button>
+        <button class="btn-full secondary" onclick="goTo('inv')" style="padding:16px;font-size:14px;">📦 Inventario</button>
+      </div>
+    </div>`}
+
+    ${agotados.length?`
+    <div class="card" style="border-color:var(--rd);">
+      <div class="card-title" style="color:var(--rd);">🔴 Agotados (${agotados.length})</div>
+      ${agotados.slice(0,4).map(p=>`<div class="list-item" style="margin-bottom:6px;padding:10px 12px;">
+        <div class="li-body"><div class="li-title">${p.nombre}</div></div>
+        <span class="badge rd">Sin stock</span>
+      </div>`).join("")}
+    </div>`:""}
+  `;
+}
+
+// ================================================================
+// PROVEEDORES
+// ================================================================
+let curProvId=null;
+function renderProv(){
+  setTitle("🏪 Proveedores");
+  setTbAction("+ Nuevo",abrirSheetProv);
+  const c=document.getElementById("main-content");
+  if(!DB.vendedores.length){
+    c.innerHTML=`<div class="empty"><div class="empty-icon">🏪</div><div class="empty-txt">Sin proveedores aún</div><button class="btn-full primary" onclick="abrirSheetProv()">+ Agregar proveedor</button></div>`;
+    return;
+  }
+  c.innerHTML=`
+    <input type="text" class="search-bar" placeholder="Buscar proveedor..." oninput="filtrarProvs(this.value)">
+    <div id="prov-list"></div>`;
+  filtrarProvs("");
+}
+
+function filtrarProvs(q){
+  const el=document.getElementById("prov-list");if(!el)return;
+  const lista=q?DB.vendedores.filter(v=>v.nombre.toLowerCase().includes(q.toLowerCase())):DB.vendedores;
+  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-txt">Sin resultados</div></div>';return;}
+  el.innerHTML=lista.map(v=>{
+    const nProd=DB.productos.filter(p=>p.vid===v.id).length;
+    return`<div class="list-item" onclick="verProv(${v.id})">
+      <div class="li-icon" style="background:var(--abg);">🏪</div>
+      <div class="li-body">
+        <div class="li-title">${v.nombre}</div>
+        <div class="li-sub">${v.tel||"Sin teléfono"} · ${nProd} producto${nProd!==1?"s":""}</div>
+      </div>
+      <div class="li-right">
+        ${v.renta&&v.renta!=="ninguna"?`<div class="li-val">${fm(v.monto_renta||0)}</div><div style="font-size:10px;color:var(--t3);">${v.renta}</div>`:'<span class="badge am">Sin renta</span>'}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function verProv(id){
+  curProvId=id;
+  screenStack.push(curScreen);
+  curScreen="prov_det";
+  renderScreen("prov_det");
+  document.getElementById("bn-prov").classList.add("active");
+}
+
+function renderProvDet(){
+  const v=DB.vendedores.find(x=>x.id===curProvId);if(!v)return;
+  setTitle(v.nombre);
+  document.getElementById("tb-back").style.display="flex";
+  setTbAction("Editar",()=>abrirSheetProv(v.id));
+  const prods=DB.productos.filter(p=>p.vid===v.id);
+  const c=document.getElementById("main-content");
+  c.innerHTML=`
+    <div class="card">
+      <div class="card-title">Información</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:14px;"><span style="color:var(--t2);">Teléfono</span><span>${v.tel||"—"}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;"><span style="color:var(--t2);">Renta</span><span>${v.renta||"—"}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;"><span style="color:var(--t2);">Monto renta</span><span>${fm(v.monto_renta||0)}</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:0;">Productos (${prods.length})</div>
+        <button onclick="abrirSheetProdProv(${v.id})" style="background:var(--ac);color:#fff;border:none;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;">+ Agregar</button>
+      </div>
+      ${prods.length?prods.map(p=>`
+        <div class="list-item" style="margin-bottom:6px;">
+          <div class="li-body">
+            <div class="li-title">${p.nombre}</div>
+            <div class="li-sub">${p.barcode||"Sin código"}</div>
+          </div>
+          <div class="li-right">
+            <div class="li-val">${fm(p.precio)}</div>
+            <div style="font-size:11px;color:${parseInt(p.qty)<=0?"var(--rd)":parseInt(p.qty)<=3?"var(--am)":"var(--gn)"};">${p.qty} pzs</div>
+          </div>
+        </div>`).join("")
+      :'<div class="empty" style="padding:24px;"><div class="empty-txt">Sin productos</div></div>'}
+    </div>
+    <button class="btn-full danger" onclick="elimProv(${v.id})" style="margin-top:8px;">Eliminar proveedor</button>
+  `;
+}
+
+async function elimProv(id){
+  if(!confirm("¿Eliminar este proveedor? Sus productos también se eliminarán."))return;
+  DB.vendedores=DB.vendedores.filter(v=>v.id!==id);
+  await dbD("vendedores",id);
+  const pElim=DB.productos.filter(p=>p.vid===id);
+  for(const p of pElim){DB.productos=DB.productos.filter(x=>x.id!==p.id);await dbD("productos",p.id);}
+  goBack();toast("Proveedor eliminado");
+}
+
+function abrirSheetProv(id=null){
+  const v=id?DB.vendedores.find(x=>x.id===id):null;
+  document.getElementById("sheet-prov-title").textContent=v?"Editar proveedor":"Nuevo proveedor";
+  document.getElementById("prov-eid").value=id||"";
+  document.getElementById("prov-nm").value=v?.nombre||"";
+  document.getElementById("prov-tel").value=v?.tel||"";
+  document.getElementById("prov-renta").value=v?.renta||"mensual";
+  document.getElementById("prov-monto").value=v?.monto_renta||"";
+  abrirSheet("sheet-prov");
+}
+
+async function guardarProv(){
+  const nm=document.getElementById("prov-nm").value.trim();
+  if(!nm){toast("Nombre requerido","rd");return;}
+  const eid=document.getElementById("prov-eid").value;
+  const obj={
+    id:eid?parseInt(eid):IDS.vid++,
+    nombre:nm,
+    tel:document.getElementById("prov-tel").value.trim(),
+    renta:document.getElementById("prov-renta").value,
+    monto_renta:parseFloat(document.getElementById("prov-monto").value)||0,
+    _modificado:new Date().toISOString()
+  };
+  if(eid){const i=DB.vendedores.findIndex(v=>v.id===parseInt(eid));if(i>=0)DB.vendedores[i]=obj;else DB.vendedores.push(obj);}
+  else DB.vendedores.push(obj);
+  await dbP("vendedores",obj);
+  cerrarSheet("sheet-prov");
+  renderScreen(curScreen);
+  toast("Proveedor guardado ✓","gn");
+}
+
+// ================================================================
+// SCANNER — ZXing (funciona en HTTPS / Netlify / GitHub Pages)
+// ================================================================
+let zxingReader=null;
+let scannerCamaraActiva=false;
+let scannerMiniActivo=false;
+let scannerMiniCallback=null;
+
+function detenerScannerCamara(){
+  if(zxingReader){
+    try{zxingReader.reset();}catch(e){}
+    zxingReader=null;
+  }
+  scannerCamaraActiva=false;
+  scannerMiniActivo=false;
+}
+
+function renderScan(){
+  setTitle("📷 Escanear");
+  const c=document.getElementById("main-content");
+  c.className="content np";
+  c.innerHTML=`
+    <div style="padding:16px 16px 0;">
+      <div class="origin-sel">
+        <div class="origin-btn bz active" id="scan-ob-bz" onclick="setScanOrigen('bazar')">🏪 Bazar</div>
+        <div class="origin-btn ng" id="scan-ob-ng" onclick="setScanOrigen('negocio')">🏬 Mi negocio</div>
+      </div>
+      <div class="fg" id="scan-prov-row">
+        <label>Proveedor</label>
+        <select id="scan-vid" style="font-size:16px;">
+          <option value="">Seleccionar proveedor...</option>
+          ${DB.vendedores.map(v=>`<option value="${v.id}">${v.nombre}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+
+    <!-- Indicador Scanner USB -->
+    <div style="padding:0 16px 8px;">
+      <div class="usb-indicator">
+        <div class="usb-dot"></div>
+        <span style="color:var(--t2);">Scanner USB/Lightning listo — escanea cuando quieras</span>
+      </div>
+    </div>
+
+    <!-- Cámara -->
+    <div class="scanner-wrap" style="border-radius:0;margin:0 0 0 0;" id="scanner-main-wrap">
+      <video id="scanner-main-video" autoplay muted playsinline style="width:100%;height:260px;object-fit:cover;display:block;"></video>
+      <div class="scan-overlay">
+        <div class="scan-frame">
+          <div class="scan-corner tr"></div>
+          <div class="scan-corner bl"></div>
+          <div class="scan-line"></div>
+        </div>
+        <div class="scan-hint" id="scan-cam-hint">Iniciando cámara…</div>
+      </div>
+    </div>
+    <div id="scan-cam-status" class="scan-status wait" style="margin:0;">Cargando…</div>
+
+    <div style="padding:16px;">
+      <div class="fg"><label>O escribe/pega el código manualmente</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="scan-manual" placeholder="Código de barras..." style="flex:1;"
+            onkeydown="if(event.key==='Enter')procesarCodigo(this.value)">
+          <button onclick="procesarCodigo(document.getElementById('scan-manual').value)"
+            style="padding:12px 14px;background:var(--ac);border:none;border-radius:var(--rs);cursor:pointer;color:#fff;font-size:14px;font-weight:600;font-family:var(--fn);">Buscar</button>
+        </div>
+      </div>
+      <div id="scan-resultado"></div>
+    </div>`;
+
+  iniciarScannerCamara("scanner-main-video",false);
+}
+
+let scanOrigen="bazar";
+function setScanOrigen(o){
+  scanOrigen=o;
+  const bz=document.getElementById("scan-ob-bz");
+  const ng=document.getElementById("scan-ob-ng");
+  const pr=document.getElementById("scan-prov-row");
+  if(bz)bz.className="origin-btn bz"+(o==="bazar"?" active":"");
+  if(ng)ng.className="origin-btn ng"+(o==="negocio"?" active":"");
+  if(pr)pr.style.display=o==="bazar"?"block":"none";
+}
+
+function iniciarScannerCamara(videoId,isMini){
+  const videoEl=document.getElementById(videoId);
+  if(!videoEl)return;
+
+  // Verificar que ZXing esté cargado
+  if(typeof ZXing==="undefined"){
+    setScanStatus("❌ Librería de escaneo no cargada",isMini);
+    return;
+  }
+
+  detenerScannerCamara();
+
+  const hints=new Map();
+  const formats=[
+    ZXing.BarcodeFormat.EAN_13,
+    ZXing.BarcodeFormat.EAN_8,
+    ZXing.BarcodeFormat.CODE_128,
+    ZXing.BarcodeFormat.CODE_39,
+    ZXing.BarcodeFormat.UPC_A,
+    ZXing.BarcodeFormat.UPC_E,
+    ZXing.BarcodeFormat.QR_CODE,
+  ];
+  hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,formats);
+  hints.set(ZXing.DecodeHintType.TRY_HARDER,true);
+
+  zxingReader=new ZXing.BrowserMultiFormatReader(hints);
+
+  setScanStatus("⏳ Accediendo a cámara…",isMini);
+
+  zxingReader.decodeFromConstraints(
+    {video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}}},
+    videoEl,
+    (result,err)=>{
+      if(result){
+        const code=result.getText();
+        if(!code)return;
+        if(navigator.vibrate)navigator.vibrate(50);
+        setScanStatus(`✓ Leído: ${code}`,isMini,"ok");
+        if(isMini){
+          detenerScannerCamara();
+          cerrarSheet("sheet-scan-mini");
+          if(scannerMiniCallback)scannerMiniCallback(code);
+        }else{
+          procesarCodigo(code);
+        }
+      }else if(err&&!(err instanceof ZXing.NotFoundException)){
+        // NotFoundException es normal (no hay código en el frame actual)
+        // Otros errores sí son problemáticos
+        if(err.message&&err.message.includes("Permission")){
+          setScanStatus("❌ Permiso de cámara denegado — usa entrada manual o scanner USB",isMini,"err");
+        }
+      }
+    }
+  ).then(()=>{
+    setScanStatus("✅ Cámara activa — apunta al código",isMini,"ok");
+    if(isMini){
+      scannerMiniActivo=true;
+      const hint=document.getElementById("scan-cam-hint");
+      if(hint)hint.textContent="Apunta al código de barras";
+    }else{
+      scannerCamaraActiva=true;
+      const hint=document.getElementById("scan-cam-hint");
+      if(hint)hint.textContent="Apunta al código de barras";
+    }
+  }).catch(err=>{
+    let msg="❌ Error de cámara";
+    if(err.name==="NotAllowedError"||err.message?.includes("Permission")){
+      msg="❌ Permiso denegado — activa la cámara en Safari/Chrome";
+    }else if(err.name==="NotFoundError"){
+      msg="❌ No se encontró cámara — usa entrada manual o scanner USB";
+    }else if(err.name==="NotReadableError"){
+      msg="❌ Cámara en uso por otra app";
+    }
+    setScanStatus(msg,isMini,"err");
+  });
+}
+
+function setScanStatus(msg,isMini,tipo="wait"){
+  const id=isMini?"scan-mini-status":"scan-cam-status";
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.textContent=msg;
+  el.className="scan-status "+tipo;
+}
+
+function abrirScannerEnSheet(){
+  cerrarSheet("sheet-prod");
+  setTimeout(()=>{
+    scannerMiniCallback=(code)=>{
+      document.getElementById("prod-bc").value=code;
+      setTimeout(()=>abrirSheet("sheet-prod"),200);
+    };
+    abrirSheet("sheet-scan-mini");
+    setTimeout(()=>iniciarScannerCamara("scanner-mini-video",true),400);
+  },300);
+}
+
+function cerrarScannerMini(){
+  detenerScannerCamara();
+  cerrarSheet("sheet-scan-mini");
+}
+
+// ================================================================
+// PROCESAR CÓDIGO (cámara o USB o manual)
+// ================================================================
+function procesarCodigo(code){
+  if(!code||!code.trim())return;
+  code=code.trim();
+  if(navigator.vibrate)navigator.vibrate(50);
+
+  // Actualizar campo manual si existe
+  const manualInp=document.getElementById("scan-manual");
+  if(manualInp)manualInp.value=code;
+
+  const el=document.getElementById("scan-resultado");
+  const enBazar=DB.productos.find(p=>p.barcode===code);
+  const enNegocio=DB.mi_productos.find(p=>p.barcode===code);
+
+  if(enBazar||enNegocio){
+    const prod=enBazar||enNegocio;
+    const origen=enBazar?"bazar":"negocio";
+    const vd=origen==="bazar"?DB.vendedores.find(v=>v.id===prod.vid):null;
+    if(el)el.innerHTML=`
+      <div class="card" style="border-color:var(--gn);">
+        <div style="font-size:12px;font-weight:600;color:var(--gn);margin-bottom:8px;">✓ PRODUCTO ENCONTRADO</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:4px;">${prod.nombre}</div>
+        <div style="font-size:13px;color:var(--t2);margin-bottom:12px;">
+          ${vd?`🏪 ${vd.nombre} · `:"🏬 Mi negocio · "}
+          ${fm(prod.precio)} · Stock: <strong style="color:${parseInt(prod.qty)<=0?"var(--rd)":parseInt(prod.qty)<=3?"var(--am)":"var(--gn)"};">${prod.qty}</strong>
+        </div>
+        <div style="font-size:12px;color:var(--t3);font-family:var(--mo);margin-bottom:12px;">${code}</div>
+        <div class="btn-row">
+          <button class="btn-full primary" onclick="abrirSheetProdExist('${origen}',${prod.id})">Editar</button>
+          <button class="btn-full secondary" onclick="ajustarStockRapido('${origen}',${prod.id})">±Stock</button>
+        </div>
+      </div>`;
+    toast("¡Encontrado!","gn");
+  }else{
+    if(el)el.innerHTML=`
+      <div class="card" style="border-color:var(--am);">
+        <div style="font-size:12px;font-weight:600;color:var(--am);margin-bottom:8px;">⚠ CÓDIGO NO REGISTRADO</div>
+        <div style="font-size:15px;font-family:var(--mo);margin-bottom:8px;">${code}</div>
+        <button class="btn-full primary" onclick="abrirSheetProdNuevo('${code}')">+ Agregar como nuevo producto</button>
+      </div>`;
+    toast("Código no encontrado","");
+  }
+}
+
+function abrirSheetProdNuevo(code){
+  const origen=scanOrigen||"bazar";
+  const vid=document.getElementById("scan-vid")?document.getElementById("scan-vid").value:"";
+  abrirSheetProd(null,origen,code,vid);
+}
+
+function abrirSheetProdExist(origen,id){
+  abrirSheetProd(id,origen);
+}
+
+function ajustarStockRapido(origen,id){
+  const prod=origen==="bazar"?DB.productos.find(p=>p.id===id):DB.mi_productos.find(p=>p.id===id);
+  if(!prod)return;
+  const n=prompt(`Stock actual: ${prod.qty}\nNuevo stock para "${prod.nombre}":`,prod.qty);
+  if(n===null)return;
+  const qty=parseInt(n);
+  if(isNaN(qty)||qty<0){toast("Cantidad inválida","rd");return;}
+  prod.qty=qty;prod._modificado=new Date().toISOString();
+  dbP(origen==="bazar"?"productos":"mi_productos",prod).then(()=>{
+    toast("Stock actualizado ✓","gn");
+    renderScreen(curScreen);
+  });
+}
+
+// ================================================================
+// INVENTARIO
+// ================================================================
+let invOrigen="bazar";
+function renderInv(){
+  setTitle("📦 Inventario");
+  const c=document.getElementById("main-content");
+  c.innerHTML=`
+    <div class="origin-sel">
+      <div class="origin-btn bz ${invOrigen==="bazar"?"active":""}" id="inv-ob-bz" onclick="setInvOrigen('bazar')">🏪 Bazar</div>
+      <div class="origin-btn ng ${invOrigen==="negocio"?"active":""}" id="inv-ob-ng" onclick="setInvOrigen('negocio')">🏬 Mi negocio</div>
+    </div>
+    <input type="text" class="search-bar" id="inv-search" placeholder="Buscar producto..." oninput="renderInvLista(this.value)">
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button class="btn-full secondary" onclick="abrirSheetProd()" style="padding:10px;font-size:13px;">+ Nuevo producto</button>
+      <button class="btn-full secondary" onclick="goTo('scan')" style="padding:10px;font-size:13px;">📷 Escanear</button>
+    </div>
+    <div id="inv-lista"></div>`;
+  renderInvLista("");
+}
+
+function setInvOrigen(o){
+  invOrigen=o;
+  document.getElementById("inv-ob-bz").className="origin-btn bz"+(o==="bazar"?" active":"");
+  document.getElementById("inv-ob-ng").className="origin-btn ng"+(o==="negocio"?" active":"");
+  renderInvLista(document.getElementById("inv-search").value||"");
+}
+
+function renderInvLista(q){
+  const el=document.getElementById("inv-lista");if(!el)return;
+  let lista=invOrigen==="bazar"?DB.productos:DB.mi_productos;
+  if(q)lista=lista.filter(p=>p.nombre.toLowerCase().includes(q.toLowerCase())||(p.barcode&&p.barcode.includes(q)));
+  if(!lista.length){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">📦</div><div class="empty-txt">Sin productos</div></div>`;return;
+  }
+  el.innerHTML=lista.map(p=>{
+    const vd=invOrigen==="bazar"?DB.vendedores.find(v=>v.id===p.vid):null;
+    const costo=p.costo||0;
+    const margen=p.precio>0&&costo>0?Math.round((p.precio-costo)/p.precio*100):null;
+    return`<div class="list-item" onclick="abrirSheetProdExist('${invOrigen}',${p.id})">
+      <div class="li-icon" style="background:${parseInt(p.qty)<=0?"var(--rbg)":parseInt(p.qty)<=3?"var(--ambg)":"var(--gbg)"};">
+        ${parseInt(p.qty)<=0?"🔴":parseInt(p.qty)<=3?"🟡":"🟢"}
+      </div>
+      <div class="li-body">
+        <div class="li-title">${p.nombre}${p.variante?` — ${p.variante}`:""}</div>
+        <div class="li-sub">${vd?vd.nombre:"Mi negocio"} ${p.barcode?`· ${p.barcode}`:""}</div>
+        ${margen!==null?`<div style="font-size:11px;color:${margen>30?"var(--gn)":margen>10?"var(--am)":"var(--rd)"};margin-top:2px;">Margen ${margen}%</div>`:""}
+      </div>
+      <div class="li-right">
+        <div class="li-val">${fm(p.precio)}</div>
+        <div style="font-size:12px;color:${parseInt(p.qty)<=0?"var(--rd)":parseInt(p.qty)<=3?"var(--am)":"var(--t2)"};">${p.qty} pzs</div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ================================================================
+// PRODUCTOS — SHEET
+// ================================================================
+let prodOrigenActual="bazar";
+
+function abrirSheetProd(id=null,origen="bazar",bc="",vid=""){
+  prodOrigenActual=origen;
+  const p=id?(origen==="bazar"?DB.productos:DB.mi_productos).find(x=>x.id===id):null;
+  document.getElementById("sheet-prod-title").textContent=p?"Editar producto":"Nuevo producto";
+  document.getElementById("prod-eid").value=id||"";
+  document.getElementById("prod-bc").value=p?.barcode||bc||"";
+  document.getElementById("prod-nm").value=p?.nombre||"";
+  document.getElementById("prod-pr").value=p?.precio||"";
+  document.getElementById("prod-qty").value=p?.qty||"";
+  document.getElementById("prod-costo").value=p?.costo||"";
+  document.getElementById("prod-margen-prev").style.display="none";
+  const psel=document.getElementById("prod-vid");
+  psel.innerHTML='<option value="">Seleccionar proveedor...</option>'+DB.vendedores.map(v=>`<option value="${v.id}">${v.nombre}</option>`).join("");
+  if(p?.vid)psel.value=p.vid;
+  else if(vid)psel.value=vid;
+  setProdOrigen(origen,!p);
+  document.getElementById("prod-origen").value=origen;
+  abrirSheet("sheet-prod");
+}
+
+function abrirSheetProdProv(vid){
+  abrirSheetProd(null,"bazar","",vid);
+}
+
+function setProdOrigen(o,mostrarSel=true){
+  prodOrigenActual=o;
+  document.getElementById("prod-origen").value=o;
+  document.getElementById("prod-origen-sel").style.display=mostrarSel?"flex":"none";
+  document.getElementById("ob-bz").className="origin-btn bz"+(o==="bazar"?" active":"");
+  document.getElementById("ob-ng").className="origin-btn ng"+(o==="negocio"?" active":"");
+  document.getElementById("prod-prov-row").style.display=o==="bazar"?"block":"none";
+  document.getElementById("prod-costo-row").style.display=o==="negocio"?"block":"none";
+}
+
+function calcMargenSheet(){
+  const pr=parseFloat(document.getElementById("prod-pr").value)||0;
+  const costo=parseFloat(document.getElementById("prod-costo").value)||0;
+  const el=document.getElementById("prod-margen-prev");
+  if(prodOrigenActual==="negocio"&&pr>0&&costo>0){
+    const margen=((pr-costo)/pr*100).toFixed(1);
+    el.style.display="block";
+    el.textContent=`Ganancia: ${fm(pr-costo)} por pieza — Margen: ${margen}%`;
+  }else{el.style.display="none";}
+}
+
+async function guardarProd(){
+  const nm=document.getElementById("prod-nm").value.trim();
+  const pr=parseFloat(document.getElementById("prod-pr").value)||0;
+  const qty=parseInt(document.getElementById("prod-qty").value)||0;
+  const bc=document.getElementById("prod-bc").value.trim();
+  const origen=document.getElementById("prod-origen").value||prodOrigenActual;
+  const eid=document.getElementById("prod-eid").value;
+  if(!nm){toast("Nombre requerido","rd");return;}
+  const arr=origen==="bazar"?DB.productos:DB.mi_productos;
+  const store=origen==="bazar"?"productos":"mi_productos";
+  const obj={
+    id:eid?parseInt(eid):origen==="bazar"?IDS.pid++:IDS.mip++,
+    nombre:nm,precio:pr,qty,barcode:bc||null,
+    vid:origen==="bazar"?(parseInt(document.getElementById("prod-vid").value)||null):null,
+    costo:origen==="negocio"?(parseFloat(document.getElementById("prod-costo").value)||0):undefined,
+    variante:null,baseId:null,
+    _modificado:new Date().toISOString()
+  };
+  if(eid){const i=arr.findIndex(p=>p.id===parseInt(eid));if(i>=0)arr[i]=obj;else arr.push(obj);}
+  else arr.push(obj);
+  await dbP(store,obj);
+  cerrarSheet("sheet-prod");
+  renderScreen(curScreen);
+  toast("Producto guardado ✓","gn");
+}
+
+// ================================================================
+// SINCRONIZACIÓN
+// ================================================================
+function renderSync(){
+  setTitle("🔄 Sincronizar");
+  const importado=DB.config.importado;
+  const c=document.getElementById("main-content");
+  c.innerHTML=`
+    <div class="sync-hero">
+      <div class="sync-icon">🔄</div>
+      <div class="sync-title">Sincronización</div>
+      <div class="sync-sub">Conecta esta app con el<br>Bazar App de tu computadora</div>
+    </div>
+
+    <div class="card" style="border-color:var(--ac);background:var(--abg);margin-bottom:16px;">
+      <div class="card-title" style="color:var(--ac);">📥 Importar desde computadora</div>
+      <p style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:16px;">
+        1. En el Bazar App de la compu ve a <strong>Exportar / Respaldo</strong><br>
+        2. Toca <strong>"⬇ Exportar para iPhone"</strong><br>
+        3. Manda el archivo por WhatsApp o AirDrop al iPhone<br>
+        4. Ábrelo aquí 👇
+      </p>
+      <input type="file" id="sync-imp-f" accept=".json" style="display:none;" onchange="importarDesdeCompu(this)">
+      <button class="btn-full primary" onclick="document.getElementById('sync-imp-f').click()">
+        📂 Seleccionar archivo de la compu
+      </button>
+      ${importado?`<div style="font-size:12px;color:var(--gn);margin-top:10px;text-align:center;">✓ Última importación: ${ff(importado)}</div>`:""}
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">📤 Exportar al Bazar App</div>
+      <p style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:16px;">
+        Cuando termines de capturar en el iPhone, exporta y sube el archivo al Bazar App de la compu en <strong>Exportar / Respaldo → Importar desde iPhone</strong>.
+      </p>
+      <button class="btn-full primary" onclick="exportarParaCompu()">
+        📤 Exportar para computadora
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 Datos en este iPhone</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:14px;">
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--t2);">Proveedores</span><strong>${DB.vendedores.length}</strong></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--t2);">Productos bazar</span><strong>${DB.productos.length}</strong></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--t2);">Mi mercancía</span><strong>${DB.mi_productos.length}</strong></div>
+      </div>
+    </div>
+
+    <div id="sync-preview" style="margin-top:12px;"></div>
+  `;
+}
+
+// Normaliza el JSON de la compu (bazar_pro_v2) al formato que entiende el iPhone
+function normalizarDatosCompu(d){
+  // Si ya es formato iPhone, regresar tal cual
+  if(d.version&&d.version.startsWith("bazar_iphone"))return d;
+
+  // Convertir vendedores: telefono→tel, periodo→renta, renta→monto_renta
+  const vendedores=(d.vendedores||[]).map(v=>({
+    id:v.id,
+    nombre:v.nombre||"",
+    tel:v.telefono||v.tel||"",
+    renta:v.periodo||v.renta_tipo||v.renta||"mensual",
+    monto_renta:typeof v.renta==="number"?v.renta:(parseFloat(v.monto_renta)||0),
+    _modificado:v._modificado||new Date().toISOString()
+  }));
+
+  // Convertir productos bazar
+  const productos=(d.productos||[]).map(p=>({
+    id:p.id,
+    nombre:p.nombre||"",
+    precio:p.precio||0,
+    qty:p.qty||0,
+    barcode:p.barcode||null,
+    vid:p.vid||null,
+    variante:p.variante||null,
+    baseId:p.baseId||null,
+    _modificado:p._modificado||new Date().toISOString()
+  }));
+
+  // Convertir mi_productos
+  const mi_productos=(d.mi_productos||[]).map(p=>({
+    id:p.id,
+    nombre:p.nombre||"",
+    precio:p.precio||0,
+    qty:p.qty||0,
+    barcode:p.barcode||null,
+    costo:p.costo||0,
+    variante:p.variante||null,
+    baseId:p.baseId||null,
+    _modificado:p._modificado||new Date().toISOString()
+  }));
+
+  // Nombre del negocio
+  const negocio=d.config?.nombre||d.config?.nm||d.negocio||"Bazar";
+
+  return{
+    version:"bazar_iphone_v1",
+    vendedores,productos,mi_productos,negocio,
+    ids:{
+      vid:Math.max(0,...vendedores.map(v=>v.id))+1,
+      pid:Math.max(0,...productos.map(p=>p.id))+1,
+      mip:Math.max(0,...mi_productos.map(p=>p.id))+1
+    }
+  };
+}
+
+// Variable global para guardar datos pendientes de importar
+let _importPending=null;
+
+async function importarDesdeCompu(input){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=async e=>{
+    try{
+      const raw=JSON.parse(e.target.result);
+      if(!raw.version||(!raw.version.startsWith("bazar_iphone")&&!raw.version.startsWith("bazar_pro"))){
+        toast("Archivo no válido — usa un respaldo del Bazar App","rd");return;
+      }
+      const d=normalizarDatosCompu(raw);
+      const esCompu=raw.version.startsWith("bazar_pro");
+      _importPending=d;
+      const prev=document.getElementById("sync-preview");
+      prev.innerHTML=`
+        <div class="card" style="border-color:var(--gn);">
+          <div class="card-title" style="color:var(--gn);">Vista previa de importación</div>
+          ${esCompu?`<div style="font-size:12px;color:var(--am);margin-bottom:10px;">📱 Formato Bazar App compu detectado — convertido automáticamente</div>`:""}
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:14px;margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--t2);">Proveedores</span><span class="badge gn">+${d.vendedores.length}</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--t2);">Productos bazar</span><span class="badge gn">+${d.productos.length}</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--t2);">Mi mercancía</span><span class="badge gn">+${d.mi_productos.length}</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--t2);">Negocio</span><span>${d.negocio||"—"}</span></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn-full secondary" onclick="_importPending=null;document.getElementById('sync-preview').innerHTML=''">Cancelar</button>
+            <button class="btn-full primary" onclick="confirmarImport()">✓ Importar todo</button>
+          </div>
+        </div>`;
+    }catch(err){toast("Error: "+err.message,"rd");}
+  };
+  r.readAsText(f);input.value="";
+}
+
+async function confirmarImport(){
+  if(!_importPending){toast("Error: no hay datos para importar","rd");return;}
+  await aplicarImportCompu(_importPending);
+  _importPending=null;
+}
+
+async function aplicarImportCompu(d){
+  for(const s of["vendedores","productos","mi_productos"]){
+    const arr=await dbGA(s);
+    for(const o of arr)await dbD(s,o.id);
+  }
+  DB.vendedores=d.vendedores||[];
+  DB.productos=d.productos||[];
+  DB.mi_productos=d.mi_productos||[];
+  for(const v of DB.vendedores)await dbP("vendedores",v);
+  for(const p of DB.productos)await dbP("productos",p);
+  for(const p of DB.mi_productos)await dbP("mi_productos",p);
+  if(d.config){
+    for(const[k,v] of Object.entries(d.config)){
+      await dbP("config",{key:k,value:v});DB.config[k]=v;
+    }
+  }
+  if(d.negocio){await dbP("config",{key:"negocio",value:d.negocio});DB.config.negocio=d.negocio;}
+  if(d.ids){
+    await dbP("config",{key:"_ids_vid",value:String(d.ids.vid)});
+    await dbP("config",{key:"_ids_pid",value:String(d.ids.pid)});
+    await dbP("config",{key:"_ids_mip",value:String(d.ids.mip)});
+  }
+  const hoyStr=hoy();
+  await dbP("config",{key:"importado",value:hoyStr});DB.config.importado=hoyStr;
+  IDS.vid=Math.max(mx(DB.vendedores),parseInt(d.ids?.vid||1));
+  IDS.pid=Math.max(mx(DB.productos),parseInt(d.ids?.pid||1));
+  IDS.mip=Math.max(mx(DB.mi_productos),parseInt(d.ids?.mip||1));
+  document.getElementById("sync-preview").innerHTML="";
+  renderSync();
+  toast(`✓ Importado: ${DB.vendedores.length} proveedores, ${DB.productos.length+DB.mi_productos.length} productos`,"gn");
+}
+
+function exportarParaCompu(){
+  const data={
+    version:"bazar_iphone_v1",
+    exportado:new Date().toISOString(),
+    negocio:DB.config.negocio||"Bazar",
+    vendedores:DB.vendedores,
+    productos:DB.productos,
+    mi_productos:DB.mi_productos,
+    ids:{vid:IDS.vid,pid:IDS.pid,mip:IDS.mip}
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="bazar-iphone-export-"+hoy()+".json";
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+  toast("Exportado ✓ — comparte el archivo con la compu","gn");
+}
+
+// ================================================================
+// SHEETS — HELPERS
+// ================================================================
+function abrirSheet(id){document.getElementById(id).classList.add("open");}
+function cerrarSheet(id){document.getElementById(id).classList.remove("open");}
+document.querySelectorAll(".sheet-bg").forEach(el=>{
+  el.addEventListener("click",e=>{if(e.target===el)cerrarSheet(el.id);});
+});
+
+// ================================================================
+// INIT
+// ================================================================
+async function init(){
+  try{
+    await abrirDB();
+    await loadAll();
+  }catch(e){
+    console.error("Error iniciando DB:",e);
+  }
+  // Ocultar pantalla de carga y mostrar app
+  document.getElementById("boot-screen").style.display="none";
+  document.getElementById("app").style.display="flex";
+  // Iniciar escáner USB
+  initUSBScanner();
+  // Mostrar dashboard
+  goTo("dash",false);
+}
+
+init();
+</script>
+</body>
+</html>
